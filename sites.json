@@ -1,0 +1,10 @@
+[
+  { "name": "lavi-katan", "url": "https://lavi-katan-bashamayim.vercel.app" },
+  { "name": "toli-campaign", "url": "https://batyamanevitz-debug.github.io/toli-campaign", "clickText": "התחל", "playSeconds": 10 },
+  { "name": "pizza-badarom", "url": "https://batyamanevitz-debug.github.io/pizza-badarom" },
+  { "name": "pizza-delivery-ofakim", "url": "https://pizza-delivery-ofakim.vercel.app" },
+  { "name": "alma", "url": "https://batyamanevitz-debug.github.io/hamahsan-alma" },
+  { "name": "cruella", "url": "https://batyamanevitz-debug.github.io/cruella-website" },
+  { "name": "secquote", "url": "https://sec-quote-ai.vercel.app" },
+  { "name": "batya-personal", "url": "https://batyamanevitz.lovable.app/" }
+]

@@ -1,0 +1,182 @@
+<!doctype html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Site → Reel · אתר לסרטון</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Heebo:wght@400;500;700;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0f0d16; --card: #1a1724; --line: #2c2840; --text: #f4f2fb; --muted: #a39fb8;
+    --accent: #7c5cff; --accent-2: #b39cff; --ok: #3ddc97; --err: #ff6b6b;
+  }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--text); font-family: Heebo, 'Segoe UI', sans-serif; min-height: 100vh; }
+  main { max-width: 860px; margin: 0 auto; padding: 48px 16px 64px; }
+  header { text-align: center; margin-bottom: 32px; }
+  .logo { display: inline-flex; align-items: center; gap: 10px; font-weight: 800; font-size: 34px; letter-spacing: -0.5px; direction: ltr; }
+  .logo .arrow { color: var(--accent-2); }
+  header p { color: var(--muted); margin: 8px 0 0; font-size: 17px; }
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 18px; padding: 24px; }
+  label { display: block; font-weight: 500; margin-bottom: 8px; }
+  .row { display: flex; gap: 10px; flex-wrap: wrap; }
+  input[type=url] { flex: 1 1 320px; direction: ltr; text-align: left; font: inherit; font-size: 16px; padding: 14px 16px; border-radius: 12px; border: 1px solid var(--line); background: #0f0d16; color: var(--text); outline: none; }
+  input[type=url]:focus { border-color: var(--accent); }
+  button { font: inherit; font-weight: 700; font-size: 16px; border: 0; border-radius: 12px; padding: 14px 26px; cursor: pointer; background: var(--accent); color: #fff; transition: transform .1s, opacity .2s; }
+  button:hover { transform: translateY(-1px); }
+  button:disabled { opacity: .5; cursor: default; transform: none; }
+  .ghost { background: transparent; border: 1px solid var(--line); color: var(--text); }
+  .speed { display: flex; gap: 8px; margin-top: 16px; align-items: center; flex-wrap: wrap; color: var(--muted); font-size: 14px; }
+  .speed input { display: none; }
+  .speed span { border: 1px solid var(--line); border-radius: 999px; padding: 6px 14px; cursor: pointer; color: var(--text); }
+  .speed input:checked + span { background: var(--accent); border-color: var(--accent); }
+  .msg { min-height: 24px; margin-top: 14px; color: var(--err); font-size: 15px; }
+  .progress { display: none; margin-top: 24px; }
+  .progress.on { display: block; }
+  .steps { display: flex; gap: 8px; }
+  .steps div { flex: 1; height: 6px; border-radius: 6px; background: var(--line); overflow: hidden; position: relative; }
+  .steps div.done { background: var(--accent); }
+  .steps div.active::after { content: ''; position: absolute; inset: 0; width: 40%; background: var(--accent-2); animation: slide 1.1s ease-in-out infinite; }
+  @keyframes slide { from { transform: translateX(260%); } to { transform: translateX(-100%); } }
+  .progress p { color: var(--muted); margin: 10px 0 0; }
+  .result { display: none; margin-top: 28px; gap: 28px; align-items: center; }
+  .result.on { display: flex; flex-wrap: wrap; }
+  .phone { width: 220px; aspect-ratio: 9/16; border-radius: 28px; border: 6px solid #2c2840; overflow: hidden; background: #000; flex: none; margin: 0 auto; }
+  .phone video { width: 100%; height: 100%; object-fit: cover; display: block; }
+  .result .info { flex: 1 1 260px; }
+  .result h2 { margin: 0 0 6px; font-size: 24px; color: var(--ok); }
+  .result .meta { color: var(--muted); margin: 0 0 20px; direction: ltr; text-align: right; word-break: break-all; font-size: 14px; }
+  .result .row a { text-decoration: none; }
+  .how { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 12px; margin-top: 28px; }
+  .how div { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 16px; color: var(--muted); font-size: 15px; }
+  .how b { display: block; color: var(--text); margin-bottom: 4px; }
+  footer { text-align: center; color: var(--muted); font-size: 13px; margin-top: 36px; }
+</style>
+</head>
+<body>
+<main>
+  <header>
+    <div class="logo">Site <span class="arrow">→</span> Reel</div>
+    <p>מדביקים לינק לאתר, ומקבלים סרטון רילס מוכן (1080x1920)</p>
+  </header>
+
+  <form class="card" id="form">
+    <label for="url">לינק לאתר</label>
+    <div class="row">
+      <input type="url" id="url" placeholder="https://example.com" required autocomplete="off">
+      <button type="submit" id="go">צור סרטון</button>
+    </div>
+    <div class="speed">
+      מהירות גלילה:
+      <label style="margin:0"><input type="radio" name="speed" value="8"><span>מהירה</span></label>
+      <label style="margin:0"><input type="radio" name="speed" value="12" checked><span>רגילה</span></label>
+      <label style="margin:0"><input type="radio" name="speed" value="18"><span>איטית</span></label>
+    </div>
+    <div class="msg" id="msg"></div>
+
+    <div class="progress" id="progress">
+      <div class="steps"><div id="s1"></div><div id="s2"></div><div id="s3"></div></div>
+      <p id="ptext">מתחילה...</p>
+    </div>
+
+    <div class="result" id="result">
+      <div class="phone"><video id="video" muted loop playsinline controls></video></div>
+      <div class="info">
+        <h2>הסרטון מוכן ✓</h2>
+        <p class="meta" id="meta"></p>
+        <div class="row">
+          <a id="dl"><button type="button">הורדת הסרטון</button></a>
+          <button type="button" class="ghost" id="again">סרטון נוסף</button>
+        </div>
+      </div>
+    </div>
+  </form>
+
+  <section class="how">
+    <div><b>1. פותחת את האתר</b>בגודל מסך של טלפון, וסוגרת באנר עוגיות</div>
+    <div><b>2. מקליטה גלילה</b>חלקה ואחידה מלמעלה עד הסוף</div>
+    <div><b>3. ממירה לרילס</b>MP4 אנכי, מוכן ל-CapCut ולאינסטגרם</div>
+  </section>
+
+  <footer>Site → Reel · בתיה מנביץ · נבנה עם Claude Code</footer>
+</main>
+
+<script>
+  const $ = (id) => document.getElementById(id);
+  const form = $('form'), go = $('go'), msg = $('msg');
+  let timer;
+
+  function setStep(n, text) {
+    ['s1', 's2', 's3'].forEach((s, i) => {
+      $(s).className = i < n ? 'done' : i === n ? 'active' : '';
+    });
+    $('ptext').textContent = text;
+  }
+
+  function reset() {
+    clearInterval(timer);
+    go.disabled = false;
+    $('url').disabled = false;
+    $('progress').classList.remove('on');
+    $('result').classList.remove('on');
+  }
+
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    msg.textContent = '';
+    const url = $('url').value.trim();
+    const scrollSeconds = form.speed.value;
+    reset();
+    go.disabled = true;
+    $('url').disabled = true;
+    $('progress').classList.add('on');
+    setStep(0, 'שולחת את הלינק...');
+
+    let id;
+    try {
+      const r = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, scrollSeconds }) });
+      const data = await r.json();
+      if (!r.ok) throw new Error(data.error);
+      id = data.id;
+    } catch (err) {
+      reset();
+      msg.textContent = err.message || 'משהו השתבש. כדאי לנסות שוב.';
+      return;
+    }
+
+    const started = Date.now();
+    timer = setInterval(async () => {
+      const s = await fetch(`/api/jobs/${id}`).then(r => r.json()).catch(() => null);
+      if (!s) return;
+      const secs = Math.round((Date.now() - started) / 1000);
+      if (s.status === 'queued') setStep(0, `ממתינה בתור (מקום ${s.position})...`);
+      if (s.status === 'recording') setStep(secs < 8 ? 0 : secs < 22 ? 1 : 2,
+        secs < 8 ? 'פותחת את האתר...' : secs < 22 ? `מקליטה גלילה... ${secs} שניות` : 'ממירה לסרטון רילס...');
+      if (s.status === 'error') {
+        reset();
+        msg.textContent = 'לא הצלחתי להקליט את האתר. כדאי לבדוק שהלינק נכון ושהאתר עולה.';
+      }
+      if (s.status === 'done') {
+        clearInterval(timer);
+        setStep(3, '');
+        $('progress').classList.remove('on');
+        $('video').src = `/api/jobs/${id}/video`;
+        $('video').play().catch(() => {});
+        $('dl').href = `/api/jobs/${id}/video?download`;
+        $('meta').textContent = `${s.name}.mp4`;
+        $('result').classList.add('on');
+        go.disabled = false;
+        $('url').disabled = false;
+      }
+    }, 1000);
+  });
+
+  $('again').addEventListener('click', () => {
+    reset();
+    $('url').value = '';
+    $('url').focus();
+  });
+</script>
+</body>
+</html>

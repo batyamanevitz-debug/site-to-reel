@@ -1,0 +1,16 @@
+{
+  "name": "site-to-reel",
+  "version": "1.0.0",
+  "description": "מדביקים לינק לאתר ומקבלים סרטון רילס 1080x1920 – Paste a website link, get a vertical scroll reel",
+  "main": "server.mjs",
+  "scripts": {
+    "start": "node server.mjs",
+    "record": "node site-to-reel.mjs"
+  },
+  "keywords": ["puppeteer", "ffmpeg", "reels", "automation"],
+  "author": "Batya Manevitz",
+  "license": "MIT",
+  "dependencies": {
+    "puppeteer-core": "^23.11.1"
+  }
+}

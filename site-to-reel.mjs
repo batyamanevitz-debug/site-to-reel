@@ -14,6 +14,9 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHROME = path.join(homedir(), '.cache/puppeteer/chrome/win64-131.0.6778.108/chrome-win64/chrome.exe');
 const IN_CLOUD = !!process.env.VERCEL;
+// @sparticuz/chromium פותח את הספריות של Amazon Linux 2023 (כמו libnss3) רק כשהוא מזהה Node 20/22.
+// ב-Vercel הפונקציה רצה על Node חדש יותר, אז הוא מדלג – ו-Chrome לא עולה. אומרים לו במפורש באיזו סביבה הוא.
+if (IN_CLOUD) process.env.AWS_EXECUTION_ENV = 'AWS_Lambda_nodejs22.x';
 // בענן מותר לכתוב רק ל-/tmp
 export const OUT = IN_CLOUD ? '/tmp/out' : path.join(HERE, 'out');
 const SCROLL_SECONDS = 12; // משך הגלילה מלמעלה עד למטה

@@ -10,6 +10,7 @@ export const config = { maxDuration: 300 };
 const json = (body, status = 200) => Response.json(body, { status });
 
 export async function GET() {
+  await import('../site-to-reel.mjs'); // מגדיר את הסביבה של Chrome לפני שבודקים אותו
   const checks = { blobToken: !!process.env.BLOB_READ_WRITE_TOKEN, vercel: !!process.env.VERCEL, node: process.version };
   try {
     const ffmpeg = (await import('ffmpeg-static')).default;
@@ -18,6 +19,7 @@ export async function GET() {
   try {
     const chromium = (await import('@sparticuz/chromium')).default;
     checks.chrome = (await chromium.executablePath()) ? 'ok' : 'חסר';
+    checks.libnss3 = existsSync('/tmp/al2023/lib/libnss3.so') ? 'ok' : 'חסר';
   } catch (e) { checks.chrome = `שגיאה: ${e.message}`; }
   return json(checks);
 }

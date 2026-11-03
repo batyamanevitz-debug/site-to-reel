@@ -99,7 +99,7 @@
     <div><b>3. ממירה לרילס</b>MP4 אנכי, מוכן ל-CapCut ולאינסטגרם</div>
   </section>
 
-  <footer>Site → Reel · בתיה מנביץ · נבנה עם Claude Code</footer>
+  <footer>Site → Reel · בתיה מנביץ · נבנה עם Claude Code · <a href="https://github.com/batyamanevitz-debug/site-to-reel" style="color:var(--accent-2)">הקוד ב-GitHub</a></footer>
 </main>
 
 <script>
@@ -133,43 +133,35 @@
     $('progress').classList.add('on');
     setStep(0, 'שולחת את הלינק...');
 
-    let id;
+    // ההקלטה רצה בשרת ולוקחת חצי דקה עד דקה; בינתיים מראים התקדמות לפי הזמן שעבר
+    const started = Date.now();
+    const recordSecs = 3 + +scrollSeconds;
+    timer = setInterval(() => {
+      const secs = Math.round((Date.now() - started) / 1000);
+      if (secs < 8) setStep(0, 'פותחת את האתר...');
+      else if (secs < 8 + recordSecs) setStep(1, `מקליטה גלילה... ${secs} שניות`);
+      else setStep(2, `ממירה לסרטון רילס... ${secs} שניות`);
+    }, 1000);
+
     try {
-      const r = await fetch('/api/jobs', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, scrollSeconds }) });
-      const data = await r.json();
+      const r = await fetch('/api/record', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, scrollSeconds }) });
+      const data = await r.json().catch(() => ({ error: 'השרת לא הגיב בזמן. כדאי לנסות שוב.' }));
       if (!r.ok) throw new Error(data.error);
-      id = data.id;
+      clearInterval(timer);
+      $('progress').classList.remove('on');
+      $('video').src = data.url;
+      $('video').play().catch(() => {});
+      $('dl').href = data.url + (data.url.includes('?') ? '&' : '?') + 'download=1';
+      $('meta').textContent = `${data.name}.mp4`;
+      $('result').classList.add('on');
+      go.disabled = false;
+      $('url').disabled = false;
     } catch (err) {
       reset();
-      msg.textContent = err.message || 'משהו השתבש. כדאי לנסות שוב.';
-      return;
+      msg.textContent = err.message === 'לא הצלחתי להקליט את האתר'
+        ? 'לא הצלחתי להקליט את האתר. כדאי לבדוק שהלינק נכון ושהאתר עולה.'
+        : err.message || 'משהו השתבש. כדאי לנסות שוב.';
     }
-
-    const started = Date.now();
-    timer = setInterval(async () => {
-      const s = await fetch(`/api/jobs/${id}`).then(r => r.json()).catch(() => null);
-      if (!s) return;
-      const secs = Math.round((Date.now() - started) / 1000);
-      if (s.status === 'queued') setStep(0, `ממתינה בתור (מקום ${s.position})...`);
-      if (s.status === 'recording') setStep(secs < 8 ? 0 : secs < 22 ? 1 : 2,
-        secs < 8 ? 'פותחת את האתר...' : secs < 22 ? `מקליטה גלילה... ${secs} שניות` : 'ממירה לסרטון רילס...');
-      if (s.status === 'error') {
-        reset();
-        msg.textContent = 'לא הצלחתי להקליט את האתר. כדאי לבדוק שהלינק נכון ושהאתר עולה.';
-      }
-      if (s.status === 'done') {
-        clearInterval(timer);
-        setStep(3, '');
-        $('progress').classList.remove('on');
-        $('video').src = `/api/jobs/${id}/video`;
-        $('video').play().catch(() => {});
-        $('dl').href = `/api/jobs/${id}/video?download`;
-        $('meta').textContent = `${s.name}.mp4`;
-        $('result').classList.add('on');
-        go.disabled = false;
-        $('url').disabled = false;
-      }
-    }, 1000);
   });
 
   $('again').addEventListener('click', () => {

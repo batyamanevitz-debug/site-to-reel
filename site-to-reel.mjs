@@ -3,7 +3,7 @@
 // שימוש:  node site-to-reel.mjs            (כל האתרים ב-sites.json)
 //         node site-to-reel.mjs lavi-katan (אתר אחד לפי שם)
 //         node site-to-reel.mjs https://...  (כל לינק, בלי לגעת ב-sites.json)
-// אותן פונקציות משמשות גם את הכלי בדפדפן (server.mjs).
+// אותן פונקציות משמשות גם את הכלי בדפדפן (server.mjs) ואת הגרסה בענן (api/record.mjs ב-Vercel).
 import puppeteer from 'puppeteer-core';
 import { execFileSync } from 'node:child_process';
 import { readFileSync, mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -13,12 +13,26 @@ import { fileURLToPath, pathToFileURL } from 'node:url';
 
 const HERE = path.dirname(fileURLToPath(import.meta.url));
 const CHROME = path.join(homedir(), '.cache/puppeteer/chrome/win64-131.0.6778.108/chrome-win64/chrome.exe');
-export const OUT = path.join(HERE, 'out');
+const IN_CLOUD = !!process.env.VERCEL;
+// בענן מותר לכתוב רק ל-/tmp
+export const OUT = IN_CLOUD ? '/tmp/out' : path.join(HERE, 'out');
 const SCROLL_SECONDS = 12; // משך הגלילה מלמעלה עד למטה
 const HOLD_TOP = 1500;     // השהייה בראש העמוד (מ"ש)
 const HOLD_END = 1000;
 
-export function launchBrowser() {
+// במחשב: ffmpeg שמותקן במערכת. בענן: הבינארי שמגיע עם ffmpeg-static
+const FFMPEG = IN_CLOUD ? (await import('ffmpeg-static')).default : 'ffmpeg';
+
+export async function launchBrowser() {
+  if (IN_CLOUD) {
+    // Chrome מוקטן שמתאים לשרתים של Vercel
+    const chromium = (await import('@sparticuz/chromium')).default;
+    return puppeteer.launch({
+      executablePath: await chromium.executablePath(),
+      args: [...chromium.args, '--autoplay-policy=no-user-gesture-required'],
+      headless: chromium.headless,
+    });
+  }
   return puppeteer.launch({ executablePath: CHROME, headless: true, args: ['--autoplay-policy=no-user-gesture-required'] });
 }
 
@@ -46,7 +60,7 @@ export async function recordSite(browser, site, { scrollSeconds = SCROLL_SECONDS
     await new Promise(r => setTimeout(r, 800));
 
     const raw = path.join(OUT, `${site.name}.webm`);
-    const recorder = await page.screencast({ path: raw });
+    const recorder = await page.screencast({ path: raw, ffmpegPath: FFMPEG });
     await new Promise(r => setTimeout(r, HOLD_TOP));
     // אתרים בסגנון סיפור: לוחצים על כפתור (למשל "התחל") ונותנים לסרט להתנגן
     if (site.clickText) {
@@ -78,9 +92,10 @@ export async function recordSite(browser, site, { scrollSeconds = SCROLL_SECONDS
 
     // המרה ל-MP4 אנכי 1080x1920, 30fps – פורמט ש-CapCut ורילס אוהבים
     const mp4 = path.join(OUT, `${site.name}.mp4`);
-    execFileSync('ffmpeg', ['-v', 'error', '-y', '-i', raw,
+    execFileSync(FFMPEG, ['-v', 'error', '-y', '-i', raw,
       '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
-      '-c:v', 'libx264', '-crf', '18', '-pix_fmt', 'yuv420p', '-an', mp4]);
+      '-c:v', 'libx264', '-crf', IN_CLOUD ? '23' : '18', '-preset', IN_CLOUD ? 'veryfast' : 'medium',
+      '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', mp4]);
     if (existsSync(mp4)) rmSync(raw);
     return mp4;
   } finally {

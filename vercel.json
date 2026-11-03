@@ -1,0 +1,12 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": null,
+  "buildCommand": "",
+  "outputDirectory": "public",
+  "functions": {
+    "api/record.mjs": {
+      "maxDuration": 300,
+      "includeFiles": "{node_modules/@sparticuz/chromium/bin/**,node_modules/ffmpeg-static/ffmpeg}"
+    }
+  }
+}

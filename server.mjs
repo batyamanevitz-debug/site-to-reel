@@ -27,6 +27,7 @@ async function work() {
     job.error = e.message;
   } finally {
     await browser.close();
+    job.resolve?.();
     busy = false;
     work();
   }
@@ -81,6 +82,23 @@ http.createServer(async (req, res) => {
     queue.push(job);
     work();
     return json(res, 200, { id });
+  }
+
+  // אותו ממשק כמו בענן (api/record.mjs): מחכים לסיום ומחזירים קישור לסרטון
+  if (req.method === 'POST' && pathname === '/api/record') {
+    const { url, scrollSeconds } = await readBody(req);
+    let parsed;
+    try { parsed = new URL(url); } catch { return json(res, 400, { error: 'הלינק לא תקין' }); }
+    if (!/^https?:$/.test(parsed.protocol)) return json(res, 400, { error: 'הלינק צריך להתחיל ב-https://' });
+    const id = randomUUID();
+    const job = { url: parsed.href, name: nameFromUrl(parsed.href), status: 'queued', scrollSeconds: Math.min(30, Math.max(5, +scrollSeconds || 12)) };
+    const finished = new Promise(r => (job.resolve = r));
+    jobs.set(id, job);
+    queue.push(job);
+    work();
+    await finished;
+    if (job.status !== 'done') return json(res, 500, { error: 'לא הצלחתי להקליט את האתר', detail: job.error });
+    return json(res, 200, { url: `/api/jobs/${id}/video`, name: job.name });
   }
 
   const m = /^\/api\/jobs\/([\w-]+)(\/video)?$/.exec(pathname);

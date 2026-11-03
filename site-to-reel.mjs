@@ -92,9 +92,12 @@ export async function recordSite(browser, site, { scrollSeconds = SCROLL_SECONDS
 
     // המרה ל-MP4 אנכי 1080x1920, 30fps – פורמט ש-CapCut ורילס אוהבים
     const mp4 = path.join(OUT, `${site.name}.mp4`);
+    // בענן: 720x1280 – חד בטלפון, וקטן מספיק כדי לחזור ישירות בתשובה (Vercel מגביל ל-4.5MB)
+    const [w, h] = IN_CLOUD ? [720, 1280] : [1080, 1920];
     execFileSync(FFMPEG, ['-v', 'error', '-y', '-i', raw,
-      '-vf', 'scale=1080:1920:force_original_aspect_ratio=decrease,pad=1080:1920:(ow-iw)/2:(oh-ih)/2,fps=30',
-      '-c:v', 'libx264', '-crf', IN_CLOUD ? '23' : '18', '-preset', IN_CLOUD ? 'veryfast' : 'medium',
+      '-vf', `scale=${w}:${h}:force_original_aspect_ratio=decrease,pad=${w}:${h}:(ow-iw)/2:(oh-ih)/2,fps=30`,
+      '-c:v', 'libx264', '-crf', IN_CLOUD ? '27' : '18', '-preset', IN_CLOUD ? 'veryfast' : 'medium',
+      ...(IN_CLOUD ? ['-maxrate', '2M', '-bufsize', '4M'] : []),
       '-pix_fmt', 'yuv420p', '-movflags', '+faststart', '-an', mp4]);
     if (existsSync(mp4)) rmSync(raw);
     return mp4;

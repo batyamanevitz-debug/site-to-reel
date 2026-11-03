@@ -145,13 +145,21 @@
 
     try {
       const r = await fetch('/api/record', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ url, scrollSeconds }) });
-      const data = await r.json().catch(() => ({ error: 'השרת לא הגיב בזמן. כדאי לנסות שוב.' }));
-      if (!r.ok) throw new Error(data.error);
+      let data;
+      if (r.ok && (r.headers.get('Content-Type') || '').startsWith('video/')) {
+        // בענן בלי אחסון: הסרטון חוזר ישירות בתשובה
+        const href = URL.createObjectURL(await r.blob());
+        data = { url: href, name: r.headers.get('X-Reel-Name') || 'reel', direct: true };
+      } else {
+        data = await r.json().catch(() => ({ error: 'השרת לא הגיב בזמן. כדאי לנסות שוב.' }));
+        if (!r.ok) throw new Error(data.error);
+      }
       clearInterval(timer);
       $('progress').classList.remove('on');
       $('video').src = data.url;
       $('video').play().catch(() => {});
-      $('dl').href = data.url + (data.url.includes('?') ? '&' : '?') + 'download=1';
+      $('dl').href = data.direct ? data.url : data.url + (data.url.includes('?') ? '&' : '?') + 'download=1';
+      $('dl').download = data.direct ? `${data.name}.mp4` : '';
       $('meta').textContent = `${data.name}.mp4`;
       $('result').classList.add('on');
       go.disabled = false;
